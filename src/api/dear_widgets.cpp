@@ -1,4 +1,4 @@
-﻿#include <dear_widgets.h>
+#include <dear_widgets.h>
 
 //#include <chrono>
 //#include <algorithm>
@@ -4238,12 +4238,12 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 		drawlist->PathStroke( mainCol, ImDrawFlags_None, mainLineThickness );
 	}
 
-	void RenderNavHighlightShape( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavHighlightFlags flags, ImDrawShape func )
+	void RenderNavHighlightShape( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavRenderCursorFlags_ flags, ImDrawShape func )
 	{
 		ImGuiContext& g = *GImGui;
 		if ( id != g.NavId )
 			return;
-		if ( g.NavDisableHighlight && !( flags & ImGuiNavHighlightFlags_AlwaysDraw ) )
+		if ( g.NavCursorVisible && !( flags & ImGuiNavHighlightFlags_AlwaysDraw ) )
 			return;
 		ImGuiWindow* window = g.CurrentWindow;
 		if ( window->DC.NavHideHighlightOneFrame )
@@ -4270,15 +4270,15 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 				window->DrawList->PopClipRect();
 		}
 	}
-	void RenderNavHighlightConvex( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavHighlightFlags flags )
+	void RenderNavHighlightConvex( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavRenderCursorFlags_ flags )
 	{
 		RenderNavHighlightShape( pts, pts_count, id, flags, &ImDrawShapeConvex );
 	}
-	void RenderNavHighlightConcave( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavHighlightFlags flags )
+	void RenderNavHighlightConcave( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavRenderCursorFlags_ flags )
 	{
 		RenderNavHighlightShape( pts, pts_count, id, flags, &ImDrawShapeConcave );
 	}
-	void RenderNavHighlightWithHole( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavHighlightFlags flags )
+	void RenderNavHighlightWithHole( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavRenderCursorFlags_ flags )
 	{
 		RenderNavHighlightShape( pts, pts_count, id, flags, &ImDrawShapeWithHole );
 	}
@@ -4640,7 +4640,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 		}
 #endif
 
-		if ( g.NavDisableMouseHover )
+		if ( g.NavHighlightItemUnderNav )
 			return false;
 
 		return true;
@@ -4752,7 +4752,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 		}
 #endif
 
-		if ( g.NavDisableMouseHover )
+		if ( g.NavHighlightItemUnderNav )
 			return false;
 
 		return true;
@@ -4864,7 +4864,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 		}
 #endif
 
-		if ( g.NavDisableMouseHover )
+		if ( g.NavHighlightItemUnderNav )
 			return false;
 
 		return true;
@@ -4886,10 +4886,10 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 
 		// Default behavior inherited from item flags
 		// Note that _both_ ButtonFlags and ItemFlags are valid sources, so copy one into the item_flags and only check that.
-		ImGuiItemFlags item_flags = ( g.LastItemData.ID == id ? g.LastItemData.InFlags : g.CurrentItemFlags );
+		ImGuiItemFlags item_flags = ( g.LastItemData.ID == id ? g.LastItemData.ItemFlags : g.CurrentItemFlags );
 		if ( flags & ImGuiButtonFlags_AllowOverlap )
 			item_flags |= ImGuiItemFlags_AllowOverlap;
-		if ( flags & ImGuiButtonFlags_Repeat )
+		if ( flags & ImGuiItemFlags_ButtonRepeat )
 			item_flags |= ImGuiItemFlags_ButtonRepeat;
 
 		ImGuiWindow* backup_hovered_window = g.HoveredWindow;
@@ -4951,7 +4951,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 				}
 
 			// Process initial action
-			if ( !( flags & ImGuiButtonFlags_NoKeyModifiers ) || ( !g.IO.KeyCtrl && !g.IO.KeyShift && !g.IO.KeyAlt ) )
+			if ( !( flags & ImGuiButtonFlags_NoKeyModsAllowed ) || ( !g.IO.KeyCtrl && !g.IO.KeyShift && !g.IO.KeyAlt ) )
 			{
 				if ( mouse_button_clicked != -1 && g.ActiveId != id )
 				{
@@ -4999,12 +4999,12 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 			}
 
 			if ( pressed )
-				g.NavDisableHighlight = true;
+				g.NavCursorVisible = false;
 		}
 
 		// Gamepad/Keyboard handling
 		// We report navigated and navigation-activated items as hovered but we don't set g.HoveredId to not interfere with mouse.
-		if ( g.NavId == id && !g.NavDisableHighlight && g.NavDisableMouseHover )
+		if ( g.NavId == id && g.NavCursorVisible && g.NavHighlightItemUnderNav )
 			if ( !( flags & ImGuiButtonFlags_NoHoveredOnFocus ) )
 				hovered = true;
 		if ( g.NavActivateDownId == id )
@@ -5068,7 +5068,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 					ImGui::ClearActiveID();
 				}
 				if ( !( flags & ImGuiButtonFlags_NoNavFocus ) )
-					g.NavDisableHighlight = true;
+					g.NavCursorVisible = false;
 			}
 			else if ( g.ActiveIdSource == ImGuiInputSource_Keyboard || g.ActiveIdSource == ImGuiInputSource_Gamepad )
 			{
@@ -5151,7 +5151,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 
 		// Render
 		const ImU32 col = ImGui::GetColorU32( ( held && hovered ) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button );
-		RenderNavHighlightShape( pts, pts_count, id, 0, draw_outline );
+		RenderNavHighlightShape( pts, pts_count, id, ImGuiNavRenderCursorFlags_None, draw_outline );
 		RenderFrameShape( pts, pts_count, col, true, draw_outline, draw_fill );
 
 		if ( g.LogEnabled )
@@ -5244,7 +5244,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 		if ( !ImGui::ItemAdd( total_bb, id, &frame_bb, 0 ) )
 			return false;
 
-		const bool hovered = ImGui::ItemHoverable( full_bb, id, g.LastItemData.InFlags );
+		const bool hovered = ImGui::ItemHoverable( full_bb, id, g.LastItemData.ItemFlags );
 
 		// Tabbing or CTRL-clicking on Slider turns it into an input box
 		const bool clicked = hovered && ImGui::IsMouseClicked( 0, ImGuiInputFlags_None, id );
@@ -5387,7 +5387,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 			if ( !ImGui::ItemAdd( total_bb, ids[ k ], &bb, 0) )
 				return false;
 
-			const bool hovered = ImGui::ItemHoverable( bb, ids[ k ], g.LastItemData.InFlags );
+			const bool hovered = ImGui::ItemHoverable( bb, ids[ k ], g.LastItemData.ItemFlags );
 			full_hovered |= hovered;
 
 			// Tabbing or CTRL-clicking on Slider turns it into an input box
@@ -5529,7 +5529,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 		if ( !ImGui::ItemAdd( total_bb, id, &frame_bb, 0 ) )
 			return false;
 
-		bool hovered = ImGui::ItemHoverable( frame_bb_drag, id, g.LastItemData.InFlags );
+		bool hovered = ImGui::ItemHoverable( frame_bb_drag, id, g.LastItemData.ItemFlags );
 
 		bool clicked = hovered && ImGui::IsMouseClicked( 0, ImGuiInputFlags_None, id );
 		bool make_active = ( clicked || g.NavActivateId == id );
@@ -5562,7 +5562,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 		if ( !ImGui::ItemAdd( total_bb, idX, &frame_bb_dragX, 0 ) )
 			return false;
 
-		hovered = ImGui::ItemHoverable( frame_bb_dragX, idX, g.LastItemData.InFlags );
+		hovered = ImGui::ItemHoverable( frame_bb_dragX, idX, g.LastItemData.ItemFlags );
 
 		clicked = hovered && ImGui::IsMouseClicked( 0, ImGuiInputFlags_None, idX );
 		make_active = ( clicked || g.NavActivateId == idX );
@@ -5587,7 +5587,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 		if ( !ImGui::ItemAdd( total_bb, idY, &frame_bb_dragX, 0 ) )
 			return false;
 
-		hovered = ImGui::ItemHoverable( frame_bb_dragY, idY, g.LastItemData.InFlags );
+		hovered = ImGui::ItemHoverable( frame_bb_dragY, idY, g.LastItemData.ItemFlags );
 
 		clicked = hovered && ImGui::IsMouseClicked( 0, ImGuiInputFlags_None, idY );
 		make_active = ( clicked || g.NavActivateId == idY );
@@ -5742,7 +5742,7 @@ static const float DRAG_MOUSE_THRESHOLD_FACTOR = 0.50f; // COPY PASTED FROM imgu
 		if ( !ImGui::ItemAdd( total_bb, id, &frame_bb, 0 ) )
 			return false;
 
-		bool hovered = ImGui::ItemHoverable( frame_bb_drag, id, g.LastItemData.InFlags );
+		bool hovered = ImGui::ItemHoverable( frame_bb_drag, id, g.LastItemData.ItemFlags );
 
 		bool clicked = hovered && ImGui::IsMouseClicked( 0, ImGuiInputFlags_None, id );
 

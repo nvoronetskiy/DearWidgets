@@ -266,7 +266,7 @@ namespace ImWidgets{
 	inline
 	const char* GetStyleColorName( StyleColor colorIndex )
 	{
-		GetStyle().GetColorName( colorIndex );
+		return GetStyle().GetColorName( colorIndex );
 	}
 	inline
 	void PushStyleColor( StyleColor colorIndex, const ImVec4& color )
@@ -492,7 +492,7 @@ namespace ImWidgets{
 	inline
 	ImVec2 ImNormalized(ImVec2 v)
 	{
-		return v / ImLength( v );
+		return v / ImSqrt( ImLengthSqr( v ) );
 	}
 	inline
 	ImVec2 ImHalfTurn(ImVec2 v)
@@ -841,10 +841,10 @@ namespace ImWidgets{
 
 	typedef void ( *ImDrawShape )( ImDrawList* drawlist, ImVec2* pts, int pts_count, ImU32 col, float thickness );
 	typedef void ( *ImDrawShapeFilled )( ImDrawList* drawlist, ImVec2* pts, int pts_count, ImU32 col );
-	IMGUI_API void RenderNavHighlightShape( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavHighlightFlags flags, ImDrawShape func );
-	IMGUI_API void RenderNavHighlightConvex( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavHighlightFlags flags );
-	IMGUI_API void RenderNavHighlightConcave( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavHighlightFlags flags );
-	IMGUI_API void RenderNavHighlightWithHole( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavHighlightFlags flags );
+	IMGUI_API void RenderNavHighlightShape( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavRenderCursorFlags_ flags, ImDrawShape func );
+	IMGUI_API void RenderNavHighlightConvex( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavRenderCursorFlags_ flags );
+	IMGUI_API void RenderNavHighlightConcave( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavRenderCursorFlags_ flags );
+	IMGUI_API void RenderNavHighlightWithHole( ImVec2* pts, int pts_count, ImGuiID id, ImGuiNavRenderCursorFlags_ flags );
 
 	IMGUI_API void RenderFrameShape( ImVec2* pts, int pts_count, ImU32 fill_col, bool border, ImDrawShape outline, ImDrawShapeFilled fill );
 	IMGUI_API void RenderFrameConcave( ImVec2* pts, int pts_count, ImU32 fill_col, bool border );
